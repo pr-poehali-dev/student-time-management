@@ -285,138 +285,151 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-accent/10">
-      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-border">
-        <div className="container mx-auto px-4 py-4">
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/10 to-accent/5">
+      <nav className="sticky top-0 z-50 glass-effect shadow-soft">
+        <div className="container mx-auto px-4 lg:px-6 py-5">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                Student Time Manager
-              </h1>
+            <div className="flex items-center gap-3 lg:gap-4">
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-soft">
+                  <Icon name="GraduationCap" size={24} className="text-white" />
+                </div>
+                <h1 className="text-xl md:text-2xl lg:text-3xl font-bold gradient-text leading-tight">
+                  Student Time Manager
+                </h1>
+              </div>
               {studentCourse && (
                 <>
-                  <Badge variant="outline" className="text-sm py-1 px-3">
+                  <Badge variant="outline" className="text-sm py-1.5 px-3 font-semibold">
                     {studentCourse} курс
                   </Badge>
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowShopDialog(true)}
-                    className="gap-2"
-                  >
+                  <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-accent/10 to-primary/10 rounded-lg border border-accent/20">
                     <Icon name="Sparkles" size={18} className="text-accent" />
-                    <span className="font-bold">{points}</span>
-                  </Button>
+                    <span className="font-bold text-lg">{points}</span>
+                  </div>
                 </>
               )}
             </div>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
               {studentCourse && (
                 <>
                   <Button
                     variant="outline"
                     onClick={() => setShowShopDialog(true)}
-                    className="gap-2"
+                    className="gap-2 shadow-soft hover:shadow-soft-lg transition-all"
                   >
                     <Icon name="ShoppingBag" size={18} />
-                    <span className="hidden md:inline">Магазин</span>
+                    <span className="hidden lg:inline font-medium">Магазин</span>
                   </Button>
                   <Button
-                    variant="outline"
+                    variant="ghost"
+                    size="icon"
                     onClick={() => setShowCourseDialog(true)}
-                    className="gap-2"
+                    className="hidden md:flex"
                   >
-                    <Icon name="GraduationCap" size={18} />
-                    <span className="hidden md:inline">Сменить курс</span>
+                    <Icon name="Settings" size={18} />
                   </Button>
                   <Button
-                    variant="outline"
+                    variant="ghost"
+                    size="icon"
                     onClick={() => setShowTipsDialog(true)}
-                    className="gap-2"
                   >
                     <Icon name="HelpCircle" size={18} />
-                    <span className="hidden md:inline">Помощь</span>
                   </Button>
                 </>
               )}
-              <Button
-                variant={activeTab === 'dashboard' ? 'default' : 'ghost'}
-                onClick={() => setActiveTab('dashboard')}
-                className="gap-2"
-              >
-                <Icon name="LayoutDashboard" size={18} />
-                <span className="hidden md:inline">Главная</span>
-              </Button>
-              <Button
-                variant={activeTab === 'schedule' ? 'default' : 'ghost'}
-                onClick={() => setActiveTab('schedule')}
-                className="gap-2"
-              >
-                <Icon name="CalendarDays" size={18} />
-                <span className="hidden md:inline">Расписание</span>
-              </Button>
-              <Button
-                variant={activeTab === 'calendar' ? 'default' : 'ghost'}
-                onClick={() => setActiveTab('calendar')}
-                className="gap-2"
-              >
-                <Icon name="Calendar" size={18} />
-                <span className="hidden md:inline">Календарь</span>
-              </Button>
+              <div className="hidden md:flex items-center gap-1 ml-2 bg-muted/50 rounded-lg p-1">
+                <Button
+                  variant={activeTab === 'dashboard' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setActiveTab('dashboard')}
+                  className="gap-2"
+                >
+                  <Icon name="LayoutDashboard" size={16} />
+                  <span className="hidden lg:inline">Главная</span>
+                </Button>
+                <Button
+                  variant={activeTab === 'schedule' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setActiveTab('schedule')}
+                  className="gap-2"
+                >
+                  <Icon name="CalendarDays" size={16} />
+                  <span className="hidden lg:inline">Расписание</span>
+                </Button>
+                <Button
+                  variant={activeTab === 'calendar' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setActiveTab('calendar')}
+                  className="gap-2"
+                >
+                  <Icon name="Calendar" size={16} />
+                  <span className="hidden lg:inline">Календарь</span>
+                </Button>
+              </div>
             </div>
           </div>
         </div>
       </nav>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 lg:px-6 py-8 lg:py-12">
         {activeTab === 'dashboard' && (
           <div className="animate-fade-in space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="p-6 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20 hover:shadow-lg transition-all animate-scale-in">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6">
+              <Card className="p-6 lg:p-8 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border-primary/20 card-hover shadow-soft smooth-shadow-hover animate-scale-in group">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold">Задачи на сегодня</h3>
-                  <Icon name="CheckCircle2" size={24} className="text-primary" />
+                  <h3 className="text-base lg:text-lg font-semibold text-foreground/80">Задачи на сегодня</h3>
+                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                    <Icon name="CheckCircle2" size={24} className="text-primary" />
+                  </div>
                 </div>
-                <p className="text-4xl font-bold text-primary">{todayTasks.length}</p>
-                <p className="text-sm text-muted-foreground mt-2">
+                <p className="text-4xl lg:text-5xl font-bold text-primary mb-2">{todayTasks.length}</p>
+                <p className="text-sm text-muted-foreground">
                   Требуют внимания
                 </p>
               </Card>
 
-              <Card className="p-6 bg-gradient-to-br from-secondary/10 to-secondary/5 border-secondary/20 hover:shadow-lg transition-all animate-scale-in" style={{animationDelay: '0.1s'}}>
+              <Card className="p-6 lg:p-8 bg-gradient-to-br from-secondary/10 via-secondary/5 to-transparent border-secondary/20 card-hover shadow-soft smooth-shadow-hover animate-scale-in group" style={{animationDelay: '0.1s'}}>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold">Предстоящие</h3>
-                  <Icon name="Clock" size={24} className="text-secondary-foreground" />
+                  <h3 className="text-base lg:text-lg font-semibold text-foreground/80">Предстоящие</h3>
+                  <div className="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center group-hover:bg-secondary/20 transition-colors">
+                    <Icon name="Clock" size={24} className="text-secondary-foreground" />
+                  </div>
                 </div>
-                <p className="text-4xl font-bold text-secondary-foreground">
+                <p className="text-4xl lg:text-5xl font-bold text-secondary-foreground mb-2">
                   {upcomingTasks.length}
                 </p>
-                <p className="text-sm text-muted-foreground mt-2">На этой неделе</p>
+                <p className="text-sm text-muted-foreground">На этой неделе</p>
               </Card>
 
-              <Card className="p-6 bg-gradient-to-br from-accent/10 to-accent/5 border-accent/20 hover:shadow-lg transition-all animate-scale-in" style={{animationDelay: '0.2s'}}>
+              <Card className="p-6 lg:p-8 bg-gradient-to-br from-accent/10 via-accent/5 to-transparent border-accent/20 card-hover shadow-soft smooth-shadow-hover animate-scale-in group" style={{animationDelay: '0.2s'}}>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold">Прогресс</h3>
-                  <Icon name="TrendingUp" size={24} className="text-accent-foreground" />
+                  <h3 className="text-base lg:text-lg font-semibold text-foreground/80">Прогресс</h3>
+                  <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center group-hover:bg-accent/20 transition-colors">
+                    <Icon name="TrendingUp" size={24} className="text-accent-foreground" />
+                  </div>
                 </div>
-                <p className="text-4xl font-bold text-accent-foreground">
+                <p className="text-4xl lg:text-5xl font-bold text-accent-foreground mb-2">
                   {Math.round(progressPercentage)}%
                 </p>
-                <Progress value={progressPercentage} className="mt-4" />
+                <Progress value={progressPercentage} className="mt-3 h-2" />
               </Card>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
               <div className="lg:col-span-2 space-y-6">
-                <div className="flex items-center justify-between flex-wrap gap-4">
-                  <h2 className="text-2xl font-bold">Ближайшие дедлайны</h2>
-                  <div className="flex gap-2 flex-wrap">
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-2xl lg:text-3xl font-bold">Ближайшие дедлайны</h2>
+                  </div>
+                  <div className="flex gap-2 flex-wrap bg-muted/30 p-2 rounded-xl">
                     {categories.map(cat => (
                       <Button
                         key={cat.id}
-                        variant={selectedCategory === cat.id ? 'default' : 'outline'}
+                        variant={selectedCategory === cat.id ? 'default' : 'ghost'}
                         size="sm"
                         onClick={() => setSelectedCategory(cat.id)}
-                        className="gap-2"
+                        className="gap-2 shadow-soft"
                       >
                         <Icon name={cat.icon as any} size={16} />
                         <span className="hidden sm:inline">{cat.name}</span>
