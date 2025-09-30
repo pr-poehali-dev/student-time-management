@@ -32,6 +32,8 @@ interface Task {
   completed: boolean;
   priority: 'high' | 'medium' | 'low';
   category: string;
+  timeSpent?: number;
+  estimatedTime?: number;
 }
 
 interface PresetTask {
@@ -90,6 +92,16 @@ const Index = () => {
   const [showShopDialog, setShowShopDialog] = useState<boolean>(false);
   const [showScheduleDialog, setShowScheduleDialog] = useState<boolean>(false);
   const [showDateDialog, setShowDateDialog] = useState<boolean>(false);
+  const [showTipsDialog, setShowTipsDialog] = useState<boolean>(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  
+  const categories = [
+    { id: 'all', name: 'Все', icon: 'ListTodo' },
+    { id: 'Учеба', name: 'Учеба', icon: 'BookOpen' },
+    { id: 'Проект', name: 'Проекты', icon: 'Briefcase' },
+    { id: 'Встречи', name: 'Встречи', icon: 'Users' },
+    { id: 'Другое', name: 'Личное', icon: 'Heart' },
+  ];
   
   const themes: Theme[] = [
     { id: 'default', name: 'Красно-жёлтая', price: 0, colors: { primary: '0 85% 70%', secondary: '48 100% 71%', accent: '48 100% 71%' } },
@@ -131,6 +143,31 @@ const Index = () => {
 
   const completedTasksCount = tasks.filter((task) => task.completed).length;
   const progressPercentage = (completedTasksCount / tasks.length) * 100;
+  
+  const filteredTasks = selectedCategory === 'all' 
+    ? tasks 
+    : tasks.filter(task => task.category === selectedCategory);
+  
+  const getCategoryStats = () => {
+    const stats: { [key: string]: number } = {};
+    tasks.forEach(task => {
+      if (task.completed) {
+        stats[task.category] = (stats[task.category] || 0) + 1;
+      }
+    });
+    return stats;
+  };
+  
+  const getTimeStats = () => {
+    const totalTime = tasks.reduce((acc, task) => acc + (task.timeSpent || 0), 0);
+    const categoryTime: { [key: string]: number } = {};
+    tasks.forEach(task => {
+      if (task.timeSpent) {
+        categoryTime[task.category] = (categoryTime[task.category] || 0) + task.timeSpent;
+      }
+    });
+    return { totalTime, categoryTime };
+  };
 
   const toggleTask = (id: number) => {
     const task = tasks.find(t => t.id === id);
@@ -291,6 +328,14 @@ const Index = () => {
                     <Icon name="GraduationCap" size={18} />
                     <span className="hidden md:inline">Сменить курс</span>
                   </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowTipsDialog(true)}
+                    className="gap-2"
+                  >
+                    <Icon name="HelpCircle" size={18} />
+                    <span className="hidden md:inline">Помощь</span>
+                  </Button>
                 </>
               )}
               <Button
@@ -362,8 +407,27 @@ const Index = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2 space-y-6">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-4">
                   <h2 className="text-2xl font-bold">Ближайшие дедлайны</h2>
+                  <div className="flex gap-2 flex-wrap">
+                    {categories.map(cat => (
+                      <Button
+                        key={cat.id}
+                        variant={selectedCategory === cat.id ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setSelectedCategory(cat.id)}
+                        className="gap-2"
+                      >
+                        <Icon name={cat.icon as any} size={16} />
+                        <span className="hidden sm:inline">{cat.name}</span>
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">
+                    {selectedCategory === 'all' ? 'Все задачи' : `Категория: ${categories.find(c => c.id === selectedCategory)?.name}`}
+                  </p>
                   <Dialog>
                     <DialogTrigger asChild>
                       <Button className="gap-2 shadow-lg hover:shadow-xl transition-shadow">
@@ -588,7 +652,7 @@ const Index = () => {
                       </div>
                     </Card>
                   ) : (
-                    tasks
+                    filteredTasks
                       .filter((task) => !task.completed)
                       .sort((a, b) => a.deadline.getTime() - b.deadline.getTime())
                       .map((task, index) => (
@@ -708,6 +772,33 @@ const Index = () => {
                       </span>
                       <span className="font-bold text-accent text-lg">{points}</span>
                     </div>
+                  </div>
+                </Card>
+
+                <Card className="p-6">
+                  <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                    <Icon name="PieChart" size={20} className="text-primary" />
+                    По категориям
+                  </h3>
+                  <div className="space-y-3">
+                    {Object.entries(getCategoryStats()).map(([cat, count]) => {
+                      const total = tasks.filter(t => t.category === cat).length;
+                      const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
+                      return (
+                        <div key={cat} className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">{cat}</span>
+                            <span className="font-medium">{count}/{total}</span>
+                          </div>
+                          <Progress value={percentage} className="h-2" />
+                        </div>
+                      );
+                    })}
+                    {Object.keys(getCategoryStats()).length === 0 && (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        Статистика появится после выполнения задач
+                      </p>
+                    )}
                   </div>
                 </Card>
               </div>
@@ -1029,6 +1120,127 @@ const Index = () => {
                 </Card>
               ))}
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showTipsDialog} onOpenChange={setShowTipsDialog}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl flex items-center gap-2">
+              <Icon name="Lightbulb" size={24} className="text-accent" />
+              Как использовать платформу
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 mt-4">
+            <Card className="p-6 bg-gradient-to-r from-primary/10 to-accent/10">
+              <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                <Icon name="Target" size={20} className="text-primary" />
+                Установка приоритетов задач
+              </h3>
+              <p className="text-sm text-muted-foreground mb-2">
+                Используйте систему приоритетов для эффективного планирования:
+              </p>
+              <ul className="text-sm space-y-2 ml-4">
+                <li className="flex items-start gap-2">
+                  <Badge className="bg-primary text-primary-foreground mt-0.5">Высокий</Badge>
+                  <span>Срочные дела с ближайшим дедлайном или высокой важностью</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Badge className="bg-secondary text-secondary-foreground mt-0.5">Средний</Badge>
+                  <span>Обычные задачи, которые нужно выполнить в течение недели</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Badge className="bg-muted text-muted-foreground mt-0.5">Низкий</Badge>
+                  <span>Несрочные дела, которые можно отложить</span>
+                </li>
+              </ul>
+            </Card>
+
+            <Card className="p-6 bg-gradient-to-r from-secondary/10 to-primary/10">
+              <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                <Icon name="FolderKanban" size={20} className="text-secondary-foreground" />
+                Категории задач
+              </h3>
+              <p className="text-sm text-muted-foreground mb-3">
+                Разделяйте задачи по категориям для лучшей организации:
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex items-center gap-2">
+                  <Icon name="BookOpen" size={18} className="text-primary" />
+                  <span className="text-sm font-medium">Учеба</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Icon name="Briefcase" size={18} className="text-primary" />
+                  <span className="text-sm font-medium">Проекты</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Icon name="Users" size={18} className="text-primary" />
+                  <span className="text-sm font-medium">Встречи</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Icon name="Heart" size={18} className="text-primary" />
+                  <span className="text-sm font-medium">Личное</span>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-6 bg-gradient-to-r from-accent/10 to-secondary/10">
+              <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                <Icon name="Sparkles" size={20} className="text-accent" />
+                Система мотивации
+              </h3>
+              <p className="text-sm text-muted-foreground mb-3">
+                Зарабатывайте очки и меняйте внешний вид платформы:
+              </p>
+              <ul className="text-sm space-y-2">
+                <li className="flex items-center gap-2">
+                  <Icon name="CheckCircle2" size={16} className="text-primary" />
+                  <span><strong>+100 очков</strong> за каждую выполненную задачу</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Icon name="ShoppingBag" size={16} className="text-accent" />
+                  <span><strong>10 000 очков</strong> — покупка новой темы оформления</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Icon name="Palette" size={16} className="text-secondary-foreground" />
+                  <span>6 уникальных цветовых тем на выбор</span>
+                </li>
+              </ul>
+            </Card>
+
+            <Card className="p-6 bg-gradient-to-r from-primary/10 to-secondary/10">
+              <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                <Icon name="TrendingUp" size={20} className="text-primary" />
+                Повышение продуктивности
+              </h3>
+              <p className="text-sm text-muted-foreground mb-3">
+                Советы для эффективного управления временем:
+              </p>
+              <ul className="text-sm space-y-2 ml-4 list-disc">
+                <li>Планируйте день с вечера — добавляйте задачи заранее</li>
+                <li>Начинайте с самых важных задач утром</li>
+                <li>Разбивайте большие задачи на маленькие подзадачи</li>
+                <li>Делайте перерывы каждые 45-60 минут</li>
+                <li>Используйте категории для баланса учёбы и личной жизни</li>
+                <li>Отмечайте выполненные задачи сразу — получайте очки!</li>
+              </ul>
+            </Card>
+
+            <Card className="p-6 bg-gradient-to-r from-secondary/10 to-accent/10">
+              <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                <Icon name="Calendar" size={20} className="text-secondary-foreground" />
+                Работа с расписанием и календарём
+              </h3>
+              <p className="text-sm text-muted-foreground mb-3">
+                Используйте все возможности планирования:
+              </p>
+              <ul className="text-sm space-y-2 ml-4 list-disc">
+                <li><strong>Расписание:</strong> Добавьте свои пары и занятия для удобного просмотра</li>
+                <li><strong>Календарь:</strong> Отмечайте важные даты — экзамены, сдачу проектов</li>
+                <li><strong>Напоминания:</strong> Следите за ближайшими дедлайнами в боковой панели</li>
+              </ul>
+            </Card>
           </div>
         </DialogContent>
       </Dialog>
