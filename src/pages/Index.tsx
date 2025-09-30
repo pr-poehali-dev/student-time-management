@@ -16,6 +16,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface Task {
   id: number;
@@ -27,7 +34,27 @@ interface Task {
   category: string;
 }
 
+interface PresetTask {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+}
+
 const Index = () => {
+  const presetTasks: PresetTask[] = [
+    { id: 'hw_math', title: 'Домашнее задание по математике', description: 'Решить задачи из учебника', category: 'Учеба' },
+    { id: 'hw_physics', title: 'Домашнее задание по физике', description: 'Выполнить лабораторную работу', category: 'Учеба' },
+    { id: 'hw_programming', title: 'Программирование - практика', description: 'Написать код по заданию', category: 'Учеба' },
+    { id: 'essay', title: 'Написать эссе', description: 'Подготовить текст для сдачи', category: 'Учеба' },
+    { id: 'presentation', title: 'Подготовить презентацию', description: 'Создать слайды для защиты', category: 'Проект' },
+    { id: 'exam_prep', title: 'Подготовка к экзамену', description: 'Повторить материал по предмету', category: 'Учеба' },
+    { id: 'reading', title: 'Прочитать литературу', description: 'Изучить учебные материалы', category: 'Учеба' },
+    { id: 'group_work', title: 'Групповой проект', description: 'Встретиться с командой и поработать', category: 'Проект' },
+    { id: 'consultation', title: 'Консультация с преподавателем', description: 'Обсудить вопросы по курсу', category: 'Встречи' },
+    { id: 'library', title: 'Посетить библиотеку', description: 'Взять необходимые книги', category: 'Другое' },
+  ];
+
   const [tasks, setTasks] = useState<Task[]>([
     {
       id: 1,
@@ -69,6 +96,7 @@ const Index = () => {
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [activeTab, setActiveTab] = useState<'dashboard' | 'schedule' | 'calendar'>('dashboard');
+  const [selectedPreset, setSelectedPreset] = useState<string>('');
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
@@ -141,6 +169,19 @@ const Index = () => {
     }
   };
 
+  const handlePresetSelect = (presetId: string) => {
+    const preset = presetTasks.find(p => p.id === presetId);
+    if (preset) {
+      setNewTask({
+        ...newTask,
+        title: preset.title,
+        description: preset.description,
+        category: preset.category,
+      });
+      setSelectedPreset(presetId);
+    }
+  };
+
   const addTask = () => {
     if (newTask.title.trim()) {
       setTasks([
@@ -158,6 +199,7 @@ const Index = () => {
         priority: 'medium',
         category: '',
       });
+      setSelectedPreset('');
     }
   };
 
@@ -256,11 +298,43 @@ const Index = () => {
                         Добавить задачу
                       </Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                       <DialogHeader>
                         <DialogTitle>Новая задача</DialogTitle>
                       </DialogHeader>
                       <div className="space-y-4 mt-4">
+                        <div>
+                          <Label htmlFor="preset">Выберите задачу из списка</Label>
+                          <Select value={selectedPreset} onValueChange={handlePresetSelect}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Или выберите готовую задачу..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {presetTasks.map((preset) => (
+                                <SelectItem key={preset.id} value={preset.id}>
+                                  <div className="flex items-center gap-2">
+                                    <Badge variant="outline" className="text-xs">
+                                      {preset.category}
+                                    </Badge>
+                                    <span>{preset.title}</span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="relative">
+                          <div className="absolute inset-0 flex items-center">
+                            <span className="w-full border-t" />
+                          </div>
+                          <div className="relative flex justify-center text-xs uppercase">
+                            <span className="bg-background px-2 text-muted-foreground">
+                              Или создайте свою
+                            </span>
+                          </div>
+                        </div>
+
                         <div>
                           <Label htmlFor="title">Название</Label>
                           <Input
@@ -283,18 +357,39 @@ const Index = () => {
                             placeholder="Добавьте детали"
                           />
                         </div>
-                        <div>
-                          <Label htmlFor="category">Категория</Label>
-                          <Input
-                            id="category"
-                            value={newTask.category}
-                            onChange={(e) =>
-                              setNewTask({ ...newTask, category: e.target.value })
-                            }
-                            placeholder="Учеба, Проект, Встречи"
-                          />
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="category">Категория</Label>
+                            <Input
+                              id="category"
+                              value={newTask.category}
+                              onChange={(e) =>
+                                setNewTask({ ...newTask, category: e.target.value })
+                              }
+                              placeholder="Учеба, Проект, Встречи"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="priority">Приоритет</Label>
+                            <Select
+                              value={newTask.priority}
+                              onValueChange={(value: 'high' | 'medium' | 'low') =>
+                                setNewTask({ ...newTask, priority: value })
+                              }
+                            >
+                              <SelectTrigger id="priority">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="high">Высокий</SelectItem>
+                                <SelectItem value="medium">Средний</SelectItem>
+                                <SelectItem value="low">Низкий</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </div>
-                        <Button onClick={addTask} className="w-full">
+                        <Button onClick={addTask} className="w-full" disabled={!newTask.title.trim()}>
+                          <Icon name="Plus" size={18} className="mr-2" />
                           Создать задачу
                         </Button>
                       </div>
