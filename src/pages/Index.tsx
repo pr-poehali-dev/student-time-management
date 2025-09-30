@@ -41,6 +41,31 @@ interface PresetTask {
   category: string;
 }
 
+interface ScheduleItem {
+  id: number;
+  time: string;
+  event: string;
+  type: 'lecture' | 'seminar' | 'lab' | 'meeting' | 'break' | 'other';
+}
+
+interface ImportantDate {
+  id: number;
+  date: Date;
+  title: string;
+  description: string;
+}
+
+interface Theme {
+  id: string;
+  name: string;
+  price: number;
+  colors: {
+    primary: string;
+    secondary: string;
+    accent: string;
+  };
+}
+
 const Index = () => {
   const presetTasks: PresetTask[] = [
     { id: 'hw_math', title: 'Домашнее задание по математике', description: 'Решить задачи из учебника', category: 'Учеба' },
@@ -58,6 +83,22 @@ const Index = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [studentCourse, setStudentCourse] = useState<string>('');
   const [showCourseDialog, setShowCourseDialog] = useState<boolean>(true);
+  const [points, setPoints] = useState<number>(0);
+  const [schedule, setSchedule] = useState<ScheduleItem[]>([]);
+  const [importantDates, setImportantDates] = useState<ImportantDate[]>([]);
+  const [currentTheme, setCurrentTheme] = useState<string>('default');
+  const [showShopDialog, setShowShopDialog] = useState<boolean>(false);
+  const [showScheduleDialog, setShowScheduleDialog] = useState<boolean>(false);
+  const [showDateDialog, setShowDateDialog] = useState<boolean>(false);
+  
+  const themes: Theme[] = [
+    { id: 'default', name: 'Красно-жёлтая', price: 0, colors: { primary: '0 85% 70%', secondary: '48 100% 71%', accent: '48 100% 71%' } },
+    { id: 'ocean', name: 'Океан', price: 10000, colors: { primary: '199 89% 48%', secondary: '204 94% 94%', accent: '212 100% 48%' } },
+    { id: 'forest', name: 'Лес', price: 10000, colors: { primary: '142 71% 45%', secondary: '84 100% 90%', accent: '120 60% 50%' } },
+    { id: 'sunset', name: 'Закат', price: 10000, colors: { primary: '14 100% 57%', secondary: '340 82% 52%', accent: '45 100% 51%' } },
+    { id: 'purple', name: 'Фиолетовая мечта', price: 10000, colors: { primary: '271 91% 65%', secondary: '291 64% 42%', accent: '280 100% 70%' } },
+    { id: 'dark', name: 'Тёмная материя', price: 10000, colors: { primary: '215 28% 17%', secondary: '217 33% 17%', accent: '262 83% 58%' } },
+  ];
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [activeTab, setActiveTab] = useState<'dashboard' | 'schedule' | 'calendar'>('dashboard');
@@ -92,6 +133,10 @@ const Index = () => {
   const progressPercentage = (completedTasksCount / tasks.length) * 100;
 
   const toggleTask = (id: number) => {
+    const task = tasks.find(t => t.id === id);
+    if (task && !task.completed) {
+      setPoints(prev => prev + 100);
+    }
     setTasks(
       tasks.map((task) =>
         task.id === id ? { ...task, completed: !task.completed } : task
@@ -174,13 +219,33 @@ const Index = () => {
     }
   };
 
-  const scheduleData = [
-    { time: '9:00', event: 'Лекция по математике', type: 'lecture' },
-    { time: '10:45', event: 'Семинар по физике', type: 'seminar' },
-    { time: '13:00', event: 'Обед', type: 'break' },
-    { time: '14:00', event: 'Лабораторная работа', type: 'lab' },
-    { time: '16:00', event: 'Встреча с куратором', type: 'meeting' },
-  ];
+  const addScheduleItem = (item: Omit<ScheduleItem, 'id'>) => {
+    setSchedule([...schedule, { ...item, id: schedule.length + 1 }]);
+  };
+
+  const removeScheduleItem = (id: number) => {
+    setSchedule(schedule.filter(item => item.id !== id));
+  };
+
+  const addImportantDate = (date: ImportantDate) => {
+    setImportantDates([...importantDates, date]);
+  };
+
+  const buyTheme = (themeId: string) => {
+    const theme = themes.find(t => t.id === themeId);
+    if (theme && points >= theme.price) {
+      setPoints(prev => prev - theme.price);
+      setCurrentTheme(themeId);
+      applyTheme(theme);
+      setShowShopDialog(false);
+    }
+  };
+
+  const applyTheme = (theme: Theme) => {
+    document.documentElement.style.setProperty('--primary', theme.colors.primary);
+    document.documentElement.style.setProperty('--secondary', theme.colors.secondary);
+    document.documentElement.style.setProperty('--accent', theme.colors.accent);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-accent/10">
@@ -192,21 +257,41 @@ const Index = () => {
                 Student Time Manager
               </h1>
               {studentCourse && (
-                <Badge variant="outline" className="text-sm py-1 px-3">
-                  {studentCourse} курс
-                </Badge>
+                <>
+                  <Badge variant="outline" className="text-sm py-1 px-3">
+                    {studentCourse} курс
+                  </Badge>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowShopDialog(true)}
+                    className="gap-2"
+                  >
+                    <Icon name="Sparkles" size={18} className="text-accent" />
+                    <span className="font-bold">{points}</span>
+                  </Button>
+                </>
               )}
             </div>
             <div className="flex gap-2">
               {studentCourse && (
-                <Button
-                  variant="outline"
-                  onClick={() => setShowCourseDialog(true)}
-                  className="gap-2"
-                >
-                  <Icon name="GraduationCap" size={18} />
-                  <span className="hidden md:inline">Сменить курс</span>
-                </Button>
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowShopDialog(true)}
+                    className="gap-2"
+                  >
+                    <Icon name="ShoppingBag" size={18} />
+                    <span className="hidden md:inline">Магазин</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowCourseDialog(true)}
+                    className="gap-2"
+                  >
+                    <Icon name="GraduationCap" size={18} />
+                    <span className="hidden md:inline">Сменить курс</span>
+                  </Button>
+                </>
               )}
               <Button
                 variant={activeTab === 'dashboard' ? 'default' : 'ghost'}
@@ -616,6 +701,13 @@ const Index = () => {
                         {tasks.length - completedTasksCount}
                       </span>
                     </div>
+                    <div className="flex justify-between items-center pt-4 border-t">
+                      <span className="text-sm text-muted-foreground flex items-center gap-2">
+                        <Icon name="Sparkles" size={16} className="text-accent" />
+                        Очки
+                      </span>
+                      <span className="font-bold text-accent text-lg">{points}</span>
+                    </div>
                   </div>
                 </Card>
               </div>
@@ -625,9 +717,79 @@ const Index = () => {
 
         {activeTab === 'schedule' && (
           <div className="animate-fade-in max-w-4xl mx-auto">
-            <h2 className="text-3xl font-bold mb-8">Расписание на сегодня</h2>
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-3xl font-bold">Моё расписание</h2>
+              <Dialog open={showScheduleDialog} onOpenChange={setShowScheduleDialog}>
+                <DialogTrigger asChild>
+                  <Button className="gap-2">
+                    <Icon name="Plus" size={18} />
+                    Добавить занятие
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Новое занятие</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 mt-4">
+                    <div>
+                      <Label htmlFor="time">Время</Label>
+                      <Input
+                        id="time"
+                        type="time"
+                        placeholder="09:00"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="event">Название</Label>
+                      <Input
+                        id="event"
+                        placeholder="Лекция по математике"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="type">Тип</Label>
+                      <Select>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Выберите тип" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="lecture">Лекция</SelectItem>
+                          <SelectItem value="seminar">Семинар</SelectItem>
+                          <SelectItem value="lab">Лабораторная</SelectItem>
+                          <SelectItem value="meeting">Встреча</SelectItem>
+                          <SelectItem value="break">Перерыв</SelectItem>
+                          <SelectItem value="other">Другое</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button className="w-full">
+                      Добавить
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
             <div className="space-y-4">
-              {scheduleData.map((item, index) => (
+              {schedule.length === 0 ? (
+                <Card className="p-12 text-center">
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center">
+                      <Icon name="CalendarDays" size={40} className="text-muted-foreground" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-semibold mb-2">Расписание пусто</h3>
+                      <p className="text-muted-foreground mb-6">
+                        Добавьте свои занятия и события
+                      </p>
+                      <Button onClick={() => setShowScheduleDialog(true)} className="gap-2">
+                        <Icon name="Plus" size={20} />
+                        Создать первое занятие
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              ) : (
+                schedule.map((item, index) => (
                 <Card
                   key={index}
                   className="p-6 hover:shadow-lg transition-all animate-slide-up"
@@ -648,17 +810,58 @@ const Index = () => {
                         {item.type === 'break' && 'Перерыв'}
                       </Badge>
                     </div>
-                    <Icon name="ChevronRight" size={24} className="text-muted-foreground" />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeScheduleItem(item.id)}
+                    >
+                      <Icon name="Trash2" size={18} className="text-destructive" />
+                    </Button>
                   </div>
                 </Card>
-              ))}
+                ))
+              )}
             </div>
           </div>
         )}
 
         {activeTab === 'calendar' && (
           <div className="animate-fade-in max-w-4xl mx-auto">
-            <h2 className="text-3xl font-bold mb-8">Календарь событий</h2>
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-3xl font-bold">Календарь событий</h2>
+              <Dialog open={showDateDialog} onOpenChange={setShowDateDialog}>
+                <DialogTrigger asChild>
+                  <Button className="gap-2">
+                    <Icon name="Plus" size={18} />
+                    Добавить важную дату
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Важная дата</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 mt-4">
+                    <div>
+                      <Label htmlFor="date-title">Название</Label>
+                      <Input
+                        id="date-title"
+                        placeholder="Экзамен по математике"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="date-description">Описание</Label>
+                      <Textarea
+                        id="date-description"
+                        placeholder="Подробности события"
+                      />
+                    </div>
+                    <Button className="w-full">
+                      Сохранить
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <Card className="p-6">
                 <Calendar
@@ -725,7 +928,7 @@ const Index = () => {
               Выберите курс, чтобы начать планировать свои задачи
             </p>
             <div className="grid grid-cols-2 gap-3">
-              {['1', '2', '3', '4', '5', '6'].map((course) => (
+              {['1', '2', '3', '4'].map((course) => (
                 <Button
                   key={course}
                   variant="outline"
@@ -738,6 +941,92 @@ const Index = () => {
                     <span>{course} курс</span>
                   </div>
                 </Button>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showShopDialog} onOpenChange={setShowShopDialog}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl flex items-center gap-2">
+              <Icon name="ShoppingBag" size={24} />
+              Магазин тем
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 mt-4">
+            <Card className="p-4 bg-gradient-to-r from-accent/10 to-primary/10">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center">
+                    <Icon name="Sparkles" size={24} className="text-accent" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Ваши очки</p>
+                    <p className="text-2xl font-bold">{points}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-muted-foreground">+100 за задачу</p>
+                  <p className="text-xs text-muted-foreground">10000 за тему</p>
+                </div>
+              </div>
+            </Card>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {themes.map((theme) => (
+                <Card
+                  key={theme.id}
+                  className={`p-6 cursor-pointer transition-all hover:shadow-lg ${
+                    currentTheme === theme.id ? 'ring-2 ring-primary' : ''
+                  }`}
+                >
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-semibold text-lg">{theme.name}</h4>
+                      {currentTheme === theme.id && (
+                        <Badge className="bg-primary">
+                          Активна
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      {Object.values(theme.colors).map((color, i) => (
+                        <div
+                          key={i}
+                          className="w-12 h-12 rounded-full border-2 border-border"
+                          style={{
+                            background: `hsl(${color})`,
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <div className="flex items-center justify-between pt-4">
+                      <div className="flex items-center gap-2">
+                        <Icon name="Sparkles" size={16} className="text-accent" />
+                        <span className="font-bold">{theme.price}</span>
+                      </div>
+                      {currentTheme === theme.id ? (
+                        <Button disabled variant="outline">
+                          Используется
+                        </Button>
+                      ) : theme.price === 0 ? (
+                        <Button onClick={() => buyTheme(theme.id)}>
+                          Применить
+                        </Button>
+                      ) : points >= theme.price ? (
+                        <Button onClick={() => buyTheme(theme.id)}>
+                          Купить
+                        </Button>
+                      ) : (
+                        <Button disabled variant="outline">
+                          Недостаточно очков
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </Card>
               ))}
             </div>
           </div>
