@@ -55,48 +55,14 @@ const Index = () => {
     { id: 'library', title: 'Посетить библиотеку', description: 'Взять необходимые книги', category: 'Другое' },
   ];
 
-  const [tasks, setTasks] = useState<Task[]>([
-    {
-      id: 1,
-      title: 'Выполнить домашнее задание по математике',
-      description: 'Главы 5-7, упражнения',
-      deadline: new Date(2025, 9, 2),
-      completed: false,
-      priority: 'high',
-      category: 'Учеба',
-    },
-    {
-      id: 2,
-      title: 'Подготовиться к презентации проекта',
-      description: 'Создать слайды и отрепетировать выступление',
-      deadline: new Date(2025, 9, 5),
-      completed: false,
-      priority: 'high',
-      category: 'Проект',
-    },
-    {
-      id: 3,
-      title: 'Сдать лабораторную работу',
-      description: 'Физика, лабораторная №3',
-      deadline: new Date(2025, 9, 3),
-      completed: false,
-      priority: 'medium',
-      category: 'Учеба',
-    },
-    {
-      id: 4,
-      title: 'Встреча с научным руководителем',
-      description: 'Обсудить дипломную работу',
-      deadline: new Date(2025, 9, 1),
-      completed: true,
-      priority: 'low',
-      category: 'Встречи',
-    },
-  ]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [studentCourse, setStudentCourse] = useState<string>('');
+  const [showCourseDialog, setShowCourseDialog] = useState<boolean>(true);
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [activeTab, setActiveTab] = useState<'dashboard' | 'schedule' | 'calendar'>('dashboard');
   const [selectedPreset, setSelectedPreset] = useState<string>('');
+  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
@@ -104,6 +70,11 @@ const Index = () => {
     priority: 'medium' as 'high' | 'medium' | 'low',
     category: '',
   });
+
+  const handleCourseSelect = (course: string) => {
+    setStudentCourse(course);
+    setShowCourseDialog(false);
+  };
 
   const todayTasks = tasks.filter(
     (task) =>
@@ -216,10 +187,27 @@ const Index = () => {
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-border">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Student Time Manager
-            </h1>
+            <div className="flex items-center gap-4">
+              <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                Student Time Manager
+              </h1>
+              {studentCourse && (
+                <Badge variant="outline" className="text-sm py-1 px-3">
+                  {studentCourse} курс
+                </Badge>
+              )}
+            </div>
             <div className="flex gap-2">
+              {studentCourse && (
+                <Button
+                  variant="outline"
+                  onClick={() => setShowCourseDialog(true)}
+                  className="gap-2"
+                >
+                  <Icon name="GraduationCap" size={18} />
+                  <span className="hidden md:inline">Сменить курс</span>
+                </Button>
+              )}
               <Button
                 variant={activeTab === 'dashboard' ? 'default' : 'ghost'}
                 onClick={() => setActiveTab('dashboard')}
@@ -398,10 +386,127 @@ const Index = () => {
                 </div>
 
                 <div className="space-y-4">
-                  {tasks
-                    .filter((task) => !task.completed)
-                    .sort((a, b) => a.deadline.getTime() - b.deadline.getTime())
-                    .map((task, index) => (
+                  {tasks.filter((task) => !task.completed).length === 0 ? (
+                    <Card className="p-12 text-center">
+                      <div className="flex flex-col items-center gap-4">
+                        <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center">
+                          <Icon name="ListTodo" size={40} className="text-muted-foreground" />
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-semibold mb-2">Пока нет задач</h3>
+                          <p className="text-muted-foreground mb-6">
+                            Начните добавлять задачи, чтобы эффективно управлять своим временем
+                          </p>
+                          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                            <DialogTrigger asChild>
+                              <Button size="lg" className="gap-2">
+                                <Icon name="Plus" size={20} />
+                                Создать первую задачу
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                              <DialogHeader>
+                                <DialogTitle>Новая задача</DialogTitle>
+                              </DialogHeader>
+                              <div className="space-y-4 mt-4">
+                                <div>
+                                  <Label htmlFor="preset-empty">Выберите задачу из списка</Label>
+                                  <Select value={selectedPreset} onValueChange={handlePresetSelect}>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Или выберите готовую задачу..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {presetTasks.map((preset) => (
+                                        <SelectItem key={preset.id} value={preset.id}>
+                                          <div className="flex items-center gap-2">
+                                            <Badge variant="outline" className="text-xs">
+                                              {preset.category}
+                                            </Badge>
+                                            <span>{preset.title}</span>
+                                          </div>
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div className="relative">
+                                  <div className="absolute inset-0 flex items-center">
+                                    <span className="w-full border-t" />
+                                  </div>
+                                  <div className="relative flex justify-center text-xs uppercase">
+                                    <span className="bg-background px-2 text-muted-foreground">
+                                      Или создайте свою
+                                    </span>
+                                  </div>
+                                </div>
+                                <div>
+                                  <Label htmlFor="title-empty">Название</Label>
+                                  <Input
+                                    id="title-empty"
+                                    value={newTask.title}
+                                    onChange={(e) =>
+                                      setNewTask({ ...newTask, title: e.target.value })
+                                    }
+                                    placeholder="Введите название задачи"
+                                  />
+                                </div>
+                                <div>
+                                  <Label htmlFor="description-empty">Описание</Label>
+                                  <Textarea
+                                    id="description-empty"
+                                    value={newTask.description}
+                                    onChange={(e) =>
+                                      setNewTask({ ...newTask, description: e.target.value })
+                                    }
+                                    placeholder="Добавьте детали"
+                                  />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <Label htmlFor="category-empty">Категория</Label>
+                                    <Input
+                                      id="category-empty"
+                                      value={newTask.category}
+                                      onChange={(e) =>
+                                        setNewTask({ ...newTask, category: e.target.value })
+                                      }
+                                      placeholder="Учеба, Проект, Встречи"
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label htmlFor="priority-empty">Приоритет</Label>
+                                    <Select
+                                      value={newTask.priority}
+                                      onValueChange={(value: 'high' | 'medium' | 'low') =>
+                                        setNewTask({ ...newTask, priority: value })
+                                      }
+                                    >
+                                      <SelectTrigger id="priority-empty">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="high">Высокий</SelectItem>
+                                        <SelectItem value="medium">Средний</SelectItem>
+                                        <SelectItem value="low">Низкий</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </div>
+                                <Button onClick={() => { addTask(); setIsDialogOpen(false); }} className="w-full" disabled={!newTask.title.trim()}>
+                                  <Icon name="Plus" size={18} className="mr-2" />
+                                  Создать задачу
+                                </Button>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
+                      </div>
+                    </Card>
+                  ) : (
+                    tasks
+                      .filter((task) => !task.completed)
+                      .sort((a, b) => a.deadline.getTime() - b.deadline.getTime())
+                      .map((task, index) => (
                       <Card
                         key={task.id}
                         className="p-6 hover:shadow-lg transition-all cursor-pointer animate-slide-up"
@@ -448,7 +553,8 @@ const Index = () => {
                           </div>
                         </div>
                       </Card>
-                    ))}
+                    ))
+                  )}
                 </div>
               </div>
 
@@ -459,23 +565,29 @@ const Index = () => {
                     Напоминания
                   </h3>
                   <div className="space-y-3">
-                    {tasks
-                      .filter((task) => !task.completed)
-                      .slice(0, 3)
-                      .map((task) => (
-                        <div
-                          key={task.id}
-                          className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                        >
-                          <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                          <div className="flex-1">
-                            <p className="text-sm font-medium">{task.title}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {getTimeUntilDeadline(task.deadline)}
-                            </p>
+                    {tasks.filter((task) => !task.completed).length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        Напоминания появятся после добавления задач
+                      </p>
+                    ) : (
+                      tasks
+                        .filter((task) => !task.completed)
+                        .slice(0, 3)
+                        .map((task) => (
+                          <div
+                            key={task.id}
+                            className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                          >
+                            <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                            <div className="flex-1">
+                              <p className="text-sm font-medium">{task.title}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {getTimeUntilDeadline(task.deadline)}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))
+                    )}
                   </div>
                 </Card>
 
@@ -602,6 +714,35 @@ const Index = () => {
           </div>
         )}
       </main>
+
+      <Dialog open={showCourseDialog} onOpenChange={setShowCourseDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">Добро пожаловать!</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 mt-4">
+            <p className="text-muted-foreground">
+              Выберите курс, чтобы начать планировать свои задачи
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              {['1', '2', '3', '4', '5', '6'].map((course) => (
+                <Button
+                  key={course}
+                  variant="outline"
+                  size="lg"
+                  onClick={() => handleCourseSelect(course)}
+                  className="h-20 text-lg font-semibold hover:bg-primary hover:text-primary-foreground transition-colors"
+                >
+                  <div className="flex flex-col items-center gap-1">
+                    <Icon name="GraduationCap" size={24} />
+                    <span>{course} курс</span>
+                  </div>
+                </Button>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
