@@ -1,12 +1,512 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState, useEffect } from 'react';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import Icon from '@/components/ui/icon';
+import { Calendar } from '@/components/ui/calendar';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+
+interface Task {
+  id: number;
+  title: string;
+  description: string;
+  deadline: Date;
+  completed: boolean;
+  priority: 'high' | 'medium' | 'low';
+  category: string;
+}
 
 const Index = () => {
+  const [tasks, setTasks] = useState<Task[]>([
+    {
+      id: 1,
+      title: 'Выполнить домашнее задание по математике',
+      description: 'Главы 5-7, упражнения',
+      deadline: new Date(2025, 9, 2),
+      completed: false,
+      priority: 'high',
+      category: 'Учеба',
+    },
+    {
+      id: 2,
+      title: 'Подготовиться к презентации проекта',
+      description: 'Создать слайды и отрепетировать выступление',
+      deadline: new Date(2025, 9, 5),
+      completed: false,
+      priority: 'high',
+      category: 'Проект',
+    },
+    {
+      id: 3,
+      title: 'Сдать лабораторную работу',
+      description: 'Физика, лабораторная №3',
+      deadline: new Date(2025, 9, 3),
+      completed: false,
+      priority: 'medium',
+      category: 'Учеба',
+    },
+    {
+      id: 4,
+      title: 'Встреча с научным руководителем',
+      description: 'Обсудить дипломную работу',
+      deadline: new Date(2025, 9, 1),
+      completed: true,
+      priority: 'low',
+      category: 'Встречи',
+    },
+  ]);
+
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'schedule' | 'calendar'>('dashboard');
+  const [newTask, setNewTask] = useState({
+    title: '',
+    description: '',
+    deadline: new Date(),
+    priority: 'medium' as 'high' | 'medium' | 'low',
+    category: '',
+  });
+
+  const todayTasks = tasks.filter(
+    (task) =>
+      task.deadline.toDateString() === new Date().toDateString() && !task.completed
+  );
+
+  const upcomingTasks = tasks.filter(
+    (task) =>
+      task.deadline > new Date() &&
+      task.deadline.toDateString() !== new Date().toDateString() &&
+      !task.completed
+  );
+
+  const completedTasksCount = tasks.filter((task) => task.completed).length;
+  const progressPercentage = (completedTasksCount / tasks.length) * 100;
+
+  const toggleTask = (id: number) => {
+    setTasks(
+      tasks.map((task) =>
+        task.id === id ? { ...task, completed: !task.completed } : task
+      )
+    );
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high':
+        return 'bg-primary text-primary-foreground';
+      case 'medium':
+        return 'bg-secondary text-secondary-foreground';
+      case 'low':
+        return 'bg-muted text-muted-foreground';
+      default:
+        return 'bg-muted text-muted-foreground';
+    }
+  };
+
+  const getPriorityLabel = (priority: string) => {
+    switch (priority) {
+      case 'high':
+        return 'Высокий';
+      case 'medium':
+        return 'Средний';
+      case 'low':
+        return 'Низкий';
+      default:
+        return 'Средний';
+    }
+  };
+
+  const getTimeUntilDeadline = (deadline: Date) => {
+    const now = new Date();
+    const diff = deadline.getTime() - now.getTime();
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+
+    if (days > 0) {
+      return `через ${days} ${days === 1 ? 'день' : days < 5 ? 'дня' : 'дней'}`;
+    } else if (hours > 0) {
+      return `через ${hours} ${hours === 1 ? 'час' : hours < 5 ? 'часа' : 'часов'}`;
+    } else {
+      return 'сегодня';
+    }
+  };
+
+  const addTask = () => {
+    if (newTask.title.trim()) {
+      setTasks([
+        ...tasks,
+        {
+          id: tasks.length + 1,
+          ...newTask,
+          completed: false,
+        },
+      ]);
+      setNewTask({
+        title: '',
+        description: '',
+        deadline: new Date(),
+        priority: 'medium',
+        category: '',
+      });
+    }
+  };
+
+  const scheduleData = [
+    { time: '9:00', event: 'Лекция по математике', type: 'lecture' },
+    { time: '10:45', event: 'Семинар по физике', type: 'seminar' },
+    { time: '13:00', event: 'Обед', type: 'break' },
+    { time: '14:00', event: 'Лабораторная работа', type: 'lab' },
+    { time: '16:00', event: 'Встреча с куратором', type: 'meeting' },
+  ];
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4 color-black text-black">Добро пожаловать!</h1>
-        <p className="text-xl text-gray-600">тут будет отображаться ваш проект</p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-accent/10">
+      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-border">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              Student Time Manager
+            </h1>
+            <div className="flex gap-2">
+              <Button
+                variant={activeTab === 'dashboard' ? 'default' : 'ghost'}
+                onClick={() => setActiveTab('dashboard')}
+                className="gap-2"
+              >
+                <Icon name="LayoutDashboard" size={18} />
+                <span className="hidden md:inline">Главная</span>
+              </Button>
+              <Button
+                variant={activeTab === 'schedule' ? 'default' : 'ghost'}
+                onClick={() => setActiveTab('schedule')}
+                className="gap-2"
+              >
+                <Icon name="CalendarDays" size={18} />
+                <span className="hidden md:inline">Расписание</span>
+              </Button>
+              <Button
+                variant={activeTab === 'calendar' ? 'default' : 'ghost'}
+                onClick={() => setActiveTab('calendar')}
+                className="gap-2"
+              >
+                <Icon name="Calendar" size={18} />
+                <span className="hidden md:inline">Календарь</span>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <main className="container mx-auto px-4 py-8">
+        {activeTab === 'dashboard' && (
+          <div className="animate-fade-in space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card className="p-6 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20 hover:shadow-lg transition-all animate-scale-in">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold">Задачи на сегодня</h3>
+                  <Icon name="CheckCircle2" size={24} className="text-primary" />
+                </div>
+                <p className="text-4xl font-bold text-primary">{todayTasks.length}</p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Требуют внимания
+                </p>
+              </Card>
+
+              <Card className="p-6 bg-gradient-to-br from-secondary/10 to-secondary/5 border-secondary/20 hover:shadow-lg transition-all animate-scale-in" style={{animationDelay: '0.1s'}}>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold">Предстоящие</h3>
+                  <Icon name="Clock" size={24} className="text-secondary-foreground" />
+                </div>
+                <p className="text-4xl font-bold text-secondary-foreground">
+                  {upcomingTasks.length}
+                </p>
+                <p className="text-sm text-muted-foreground mt-2">На этой неделе</p>
+              </Card>
+
+              <Card className="p-6 bg-gradient-to-br from-accent/10 to-accent/5 border-accent/20 hover:shadow-lg transition-all animate-scale-in" style={{animationDelay: '0.2s'}}>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold">Прогресс</h3>
+                  <Icon name="TrendingUp" size={24} className="text-accent-foreground" />
+                </div>
+                <p className="text-4xl font-bold text-accent-foreground">
+                  {Math.round(progressPercentage)}%
+                </p>
+                <Progress value={progressPercentage} className="mt-4" />
+              </Card>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-2 space-y-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-bold">Ближайшие дедлайны</h2>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button className="gap-2 shadow-lg hover:shadow-xl transition-shadow">
+                        <Icon name="Plus" size={18} />
+                        Добавить задачу
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Новая задача</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4 mt-4">
+                        <div>
+                          <Label htmlFor="title">Название</Label>
+                          <Input
+                            id="title"
+                            value={newTask.title}
+                            onChange={(e) =>
+                              setNewTask({ ...newTask, title: e.target.value })
+                            }
+                            placeholder="Введите название задачи"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="description">Описание</Label>
+                          <Textarea
+                            id="description"
+                            value={newTask.description}
+                            onChange={(e) =>
+                              setNewTask({ ...newTask, description: e.target.value })
+                            }
+                            placeholder="Добавьте детали"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="category">Категория</Label>
+                          <Input
+                            id="category"
+                            value={newTask.category}
+                            onChange={(e) =>
+                              setNewTask({ ...newTask, category: e.target.value })
+                            }
+                            placeholder="Учеба, Проект, Встречи"
+                          />
+                        </div>
+                        <Button onClick={addTask} className="w-full">
+                          Создать задачу
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+
+                <div className="space-y-4">
+                  {tasks
+                    .filter((task) => !task.completed)
+                    .sort((a, b) => a.deadline.getTime() - b.deadline.getTime())
+                    .map((task, index) => (
+                      <Card
+                        key={task.id}
+                        className="p-6 hover:shadow-lg transition-all cursor-pointer animate-slide-up"
+                        style={{animationDelay: `${index * 0.1}s`}}
+                      >
+                        <div className="flex items-start gap-4">
+                          <Checkbox
+                            checked={task.completed}
+                            onCheckedChange={() => toggleTask(task.id)}
+                            className="mt-1"
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-start justify-between mb-2">
+                              <div>
+                                <h3 className="font-semibold text-lg mb-1">
+                                  {task.title}
+                                </h3>
+                                <p className="text-sm text-muted-foreground">
+                                  {task.description}
+                                </p>
+                              </div>
+                              <Badge className={getPriorityColor(task.priority)}>
+                                {getPriorityLabel(task.priority)}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-4 mt-4 text-sm">
+                              <div className="flex items-center gap-2 text-muted-foreground">
+                                <Icon name="Calendar" size={16} />
+                                <span>
+                                  {task.deadline.toLocaleDateString('ru-RU', {
+                                    day: 'numeric',
+                                    month: 'long',
+                                  })}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2 text-primary">
+                                <Icon name="Clock" size={16} />
+                                <span className="font-medium">
+                                  {getTimeUntilDeadline(task.deadline)}
+                                </span>
+                              </div>
+                              <Badge variant="outline">{task.category}</Badge>
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <Card className="p-6">
+                  <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                    <Icon name="Bell" size={20} className="text-primary" />
+                    Напоминания
+                  </h3>
+                  <div className="space-y-3">
+                    {tasks
+                      .filter((task) => !task.completed)
+                      .slice(0, 3)
+                      .map((task) => (
+                        <div
+                          key={task.id}
+                          className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                        >
+                          <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                          <div className="flex-1">
+                            <p className="text-sm font-medium">{task.title}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {getTimeUntilDeadline(task.deadline)}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </Card>
+
+                <Card className="p-6">
+                  <h3 className="font-semibold text-lg mb-4">Статистика</h3>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">
+                        Всего задач
+                      </span>
+                      <span className="font-bold">{tasks.length}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">
+                        Выполнено
+                      </span>
+                      <span className="font-bold text-primary">
+                        {completedTasksCount}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">
+                        В процессе
+                      </span>
+                      <span className="font-bold text-secondary-foreground">
+                        {tasks.length - completedTasksCount}
+                      </span>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'schedule' && (
+          <div className="animate-fade-in max-w-4xl mx-auto">
+            <h2 className="text-3xl font-bold mb-8">Расписание на сегодня</h2>
+            <div className="space-y-4">
+              {scheduleData.map((item, index) => (
+                <Card
+                  key={index}
+                  className="p-6 hover:shadow-lg transition-all animate-slide-up"
+                  style={{animationDelay: `${index * 0.1}s`}}
+                >
+                  <div className="flex items-center gap-6">
+                    <div className="flex-shrink-0 w-20">
+                      <p className="text-2xl font-bold text-primary">{item.time}</p>
+                    </div>
+                    <div className="w-1 h-12 bg-gradient-to-b from-primary to-secondary rounded-full" />
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg">{item.event}</h3>
+                      <Badge variant="outline" className="mt-2">
+                        {item.type === 'lecture' && 'Лекция'}
+                        {item.type === 'seminar' && 'Семинар'}
+                        {item.type === 'lab' && 'Лабораторная'}
+                        {item.type === 'meeting' && 'Встреча'}
+                        {item.type === 'break' && 'Перерыв'}
+                      </Badge>
+                    </div>
+                    <Icon name="ChevronRight" size={24} className="text-muted-foreground" />
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'calendar' && (
+          <div className="animate-fade-in max-w-4xl mx-auto">
+            <h2 className="text-3xl font-bold mb-8">Календарь событий</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <Card className="p-6">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={setSelectedDate}
+                  className="rounded-lg"
+                />
+              </Card>
+              <Card className="p-6">
+                <h3 className="font-semibold text-lg mb-4">
+                  События на{' '}
+                  {selectedDate?.toLocaleDateString('ru-RU', {
+                    day: 'numeric',
+                    month: 'long',
+                  })}
+                </h3>
+                <div className="space-y-3">
+                  {tasks
+                    .filter(
+                      (task) =>
+                        task.deadline.toDateString() === selectedDate?.toDateString()
+                    )
+                    .map((task) => (
+                      <div
+                        key={task.id}
+                        className="p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h4 className="font-medium">{task.title}</h4>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {task.description}
+                            </p>
+                          </div>
+                          <Badge className={getPriorityColor(task.priority)}>
+                            {getPriorityLabel(task.priority)}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  {tasks.filter(
+                    (task) =>
+                      task.deadline.toDateString() === selectedDate?.toDateString()
+                  ).length === 0 && (
+                    <p className="text-muted-foreground text-center py-8">
+                      Нет событий на эту дату
+                    </p>
+                  )}
+                </div>
+              </Card>
+            </div>
+          </div>
+        )}
+      </main>
     </div>
   );
 };
