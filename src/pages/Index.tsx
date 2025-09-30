@@ -96,6 +96,14 @@ const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [showProfileDialog, setShowProfileDialog] = useState<boolean>(false);
   const [completedTasksTotal, setCompletedTasksTotal] = useState<number>(0);
+  const [selectedAvatar, setSelectedAvatar] = useState<string>('Cat');
+
+  const avatars = [
+    { id: 'Cat', name: 'Котенок', emoji: '🐱' },
+    { id: 'Squirrel', name: 'Обезьяна', emoji: '🐵' },
+    { id: 'Dog', name: 'Собачка', emoji: '🐶' },
+    { id: 'Bird', name: 'Попугай', emoji: '🦜' },
+  ];
   
   const categories = [
     { id: 'all', name: 'Все', icon: 'ListTodo' },
@@ -344,8 +352,11 @@ const Index = () => {
                     className="gap-2 px-3 py-2 h-auto hover:bg-primary/5"
                   >
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                        <Icon name={getCurrentRank().icon as any} size={16} className="text-white" />
+                      <div className="relative w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md">
+                        <span className="text-2xl">{avatars.find(a => a.id === selectedAvatar)?.emoji}</span>
+                        <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-background border-2 border-primary flex items-center justify-center">
+                          <Icon name={getCurrentRank().icon as any} size={10} className="text-primary" />
+                        </div>
                       </div>
                       <div className="hidden lg:flex flex-col items-start">
                         <span className="text-xs text-muted-foreground">{getCurrentRank().title}</span>
@@ -1188,7 +1199,7 @@ const Index = () => {
       </Dialog>
 
       <Dialog open={showProfileDialog} onOpenChange={setShowProfileDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-2xl flex items-center gap-2">
               <Icon name="User" size={24} className="text-primary" />
@@ -1196,14 +1207,35 @@ const Index = () => {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-6 mt-4">
-            <div className="flex items-center gap-6 p-6 bg-gradient-to-r from-primary/10 via-accent/10 to-secondary/10 rounded-xl">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
-                <Icon name={getCurrentRank().icon as any} size={36} className="text-white" />
+            <div className="flex flex-col lg:flex-row items-center gap-6 p-6 bg-gradient-to-r from-primary/10 via-accent/10 to-secondary/10 rounded-xl">
+              <div className="relative flex flex-col items-center gap-3">
+                <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
+                  <span className="text-5xl">{avatars.find(a => a.id === selectedAvatar)?.emoji}</span>
+                  <div className="absolute -bottom-2 -right-2 w-10 h-10 rounded-full bg-background border-2 border-primary flex items-center justify-center shadow-md">
+                    <Icon name={getCurrentRank().icon as any} size={20} className="text-primary" />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  {avatars.map((avatar) => (
+                    <button
+                      key={avatar.id}
+                      onClick={() => setSelectedAvatar(avatar.id)}
+                      className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                        selectedAvatar === avatar.id
+                          ? 'bg-primary/20 ring-2 ring-primary scale-110'
+                          : 'bg-muted hover:bg-muted/70'
+                      }`}
+                      title={avatar.name}
+                    >
+                      <span className="text-xl">{avatar.emoji}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="flex-1">
+              <div className="flex-1 text-center lg:text-left">
                 <h3 className="text-2xl font-bold mb-1">{getCurrentRank().title}</h3>
-                <p className="text-muted-foreground mb-2">{studentCourse} курс</p>
-                <div className="flex items-center gap-4">
+                <p className="text-muted-foreground mb-3">{studentCourse} курс</p>
+                <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
                   <div className="flex items-center gap-2">
                     <Icon name="CheckCircle2" size={18} className="text-primary" />
                     <span className="font-semibold">{completedTasksTotal} задач выполнено</span>
@@ -1218,19 +1250,62 @@ const Index = () => {
 
             {getNextRank() && (
               <Card className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="font-semibold text-lg">Прогресс до следующего звания</h4>
-                  <Badge variant="outline" className="text-sm">
-                    {completedTasksTotal} / {getNextRank()!.tasks}
-                  </Badge>
-                </div>
-                <Progress value={getRankProgress()} className="h-3 mb-3" />
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                  <Icon name={getNextRank()!.icon as any} size={20} className={getNextRank()!.color} />
-                  <span>
-                    Осталось <strong>{getNextRank()!.tasks - completedTasksTotal}</strong> задач до звания{' '}
-                    <strong className={getNextRank()!.color}>{getNextRank()!.title}</strong>
-                  </span>
+                <div className="flex flex-col lg:flex-row items-center gap-6">
+                  <div className="flex-shrink-0">
+                    <svg className="w-32 h-32 transform -rotate-90">
+                      <circle
+                        cx="64"
+                        cy="64"
+                        r="56"
+                        stroke="currentColor"
+                        strokeWidth="8"
+                        fill="none"
+                        className="text-muted"
+                      />
+                      <circle
+                        cx="64"
+                        cy="64"
+                        r="56"
+                        stroke="currentColor"
+                        strokeWidth="8"
+                        fill="none"
+                        strokeDasharray={`${2 * Math.PI * 56}`}
+                        strokeDashoffset={`${2 * Math.PI * 56 * (1 - getRankProgress() / 100)}`}
+                        className="text-primary transition-all duration-500"
+                        strokeLinecap="round"
+                      />
+                      <text
+                        x="64"
+                        y="64"
+                        textAnchor="middle"
+                        dy="0.3em"
+                        className="text-2xl font-bold fill-current"
+                        transform="rotate(90 64 64)"
+                      >
+                        {Math.round(getRankProgress())}%
+                      </text>
+                    </svg>
+                  </div>
+                  <div className="flex-1 text-center lg:text-left">
+                    <h4 className="font-semibold text-xl mb-2">Прогресс до следующего звания</h4>
+                    <div className="flex items-center justify-center lg:justify-start gap-2 mb-3">
+                      <Badge variant="outline" className="text-base px-3 py-1">
+                        {completedTasksTotal} / {getNextRank()!.tasks}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-center lg:justify-start gap-3 p-4 bg-gradient-to-r from-primary/5 to-accent/5 rounded-lg">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                        <Icon name={getNextRank()!.icon as any} size={24} className="text-white" />
+                      </div>
+                      <div className="text-left">
+                        <p className="text-sm text-muted-foreground">Следующее звание</p>
+                        <p className="font-bold text-lg">{getNextRank()!.title}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Осталось <strong className="text-primary">{getNextRank()!.tasks - completedTasksTotal}</strong> задач
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </Card>
             )}
