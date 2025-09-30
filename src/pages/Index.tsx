@@ -94,6 +94,8 @@ const Index = () => {
   const [showDateDialog, setShowDateDialog] = useState<boolean>(false);
   const [showTipsDialog, setShowTipsDialog] = useState<boolean>(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [showProfileDialog, setShowProfileDialog] = useState<boolean>(false);
+  const [completedTasksTotal, setCompletedTasksTotal] = useState<number>(0);
   
   const categories = [
     { id: 'all', name: 'Все', icon: 'ListTodo' },
@@ -169,10 +171,46 @@ const Index = () => {
     return { totalTime, categoryTime };
   };
 
+  const ranks = [
+    { title: 'Новичок', tasks: 10, icon: 'Sparkles', color: 'text-gray-500' },
+    { title: 'Ученик планировщик', tasks: 50, icon: 'BookOpen', color: 'text-blue-500' },
+    { title: 'Начинающий организатор', tasks: 100, icon: 'Target', color: 'text-green-500' },
+    { title: 'Мастер напоминаний', tasks: 500, icon: 'Award', color: 'text-purple-500' },
+    { title: 'Исследователь продуктивности', tasks: 1000, icon: 'Trophy', color: 'text-yellow-500' },
+  ];
+
+  const getCurrentRank = () => {
+    for (let i = ranks.length - 1; i >= 0; i--) {
+      if (completedTasksTotal >= ranks[i].tasks) {
+        return ranks[i];
+      }
+    }
+    return { title: 'Без звания', tasks: 0, icon: 'User', color: 'text-gray-400' };
+  };
+
+  const getNextRank = () => {
+    for (let i = 0; i < ranks.length; i++) {
+      if (completedTasksTotal < ranks[i].tasks) {
+        return ranks[i];
+      }
+    }
+    return null;
+  };
+
+  const getRankProgress = () => {
+    const nextRank = getNextRank();
+    if (!nextRank) return 100;
+    const currentRank = getCurrentRank();
+    const tasksForNextRank = nextRank.tasks - currentRank.tasks;
+    const currentProgress = completedTasksTotal - currentRank.tasks;
+    return (currentProgress / tasksForNextRank) * 100;
+  };
+
   const toggleTask = (id: number) => {
     const task = tasks.find(t => t.id === id);
     if (task && !task.completed) {
       setPoints(prev => prev + 100);
+      setCompletedTasksTotal(prev => prev + 1);
     }
     setTasks(
       tasks.map((task) =>
@@ -300,9 +338,21 @@ const Index = () => {
               </div>
               {studentCourse && (
                 <>
-                  <Badge variant="outline" className="text-sm py-1.5 px-3 font-semibold">
-                    {studentCourse} курс
-                  </Badge>
+                  <Button
+                    variant="ghost"
+                    onClick={() => setShowProfileDialog(true)}
+                    className="gap-2 px-3 py-2 h-auto hover:bg-primary/5"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                        <Icon name={getCurrentRank().icon as any} size={16} className="text-white" />
+                      </div>
+                      <div className="hidden lg:flex flex-col items-start">
+                        <span className="text-xs text-muted-foreground">{getCurrentRank().title}</span>
+                        <span className="text-xs font-bold">{completedTasksTotal} задач</span>
+                      </div>
+                    </div>
+                  </Button>
                   <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-accent/10 to-primary/10 rounded-lg border border-accent/20">
                     <Icon name="Sparkles" size={18} className="text-accent" />
                     <span className="font-bold text-lg">{points}</span>
@@ -1133,6 +1183,134 @@ const Index = () => {
                 </Card>
               ))}
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showProfileDialog} onOpenChange={setShowProfileDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl flex items-center gap-2">
+              <Icon name="User" size={24} className="text-primary" />
+              Мой профиль
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 mt-4">
+            <div className="flex items-center gap-6 p-6 bg-gradient-to-r from-primary/10 via-accent/10 to-secondary/10 rounded-xl">
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
+                <Icon name={getCurrentRank().icon as any} size={36} className="text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-2xl font-bold mb-1">{getCurrentRank().title}</h3>
+                <p className="text-muted-foreground mb-2">{studentCourse} курс</p>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <Icon name="CheckCircle2" size={18} className="text-primary" />
+                    <span className="font-semibold">{completedTasksTotal} задач выполнено</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Icon name="Sparkles" size={18} className="text-accent" />
+                    <span className="font-semibold">{points} очков</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {getNextRank() && (
+              <Card className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="font-semibold text-lg">Прогресс до следующего звания</h4>
+                  <Badge variant="outline" className="text-sm">
+                    {completedTasksTotal} / {getNextRank()!.tasks}
+                  </Badge>
+                </div>
+                <Progress value={getRankProgress()} className="h-3 mb-3" />
+                <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                  <Icon name={getNextRank()!.icon as any} size={20} className={getNextRank()!.color} />
+                  <span>
+                    Осталось <strong>{getNextRank()!.tasks - completedTasksTotal}</strong> задач до звания{' '}
+                    <strong className={getNextRank()!.color}>{getNextRank()!.title}</strong>
+                  </span>
+                </div>
+              </Card>
+            )}
+
+            <Card className="p-6">
+              <h4 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                <Icon name="Award" size={20} className="text-accent" />
+                Все достижения
+              </h4>
+              <div className="space-y-3">
+                {ranks.map((rank, index) => {
+                  const isUnlocked = completedTasksTotal >= rank.tasks;
+                  const isNext = !isUnlocked && getNextRank()?.title === rank.title;
+                  
+                  return (
+                    <div
+                      key={index}
+                      className={`flex items-center gap-4 p-4 rounded-lg border-2 transition-all ${
+                        isUnlocked
+                          ? 'bg-gradient-to-r from-primary/5 to-accent/5 border-primary/20'
+                          : isNext
+                          ? 'bg-muted/30 border-muted-foreground/20 border-dashed'
+                          : 'bg-muted/10 border-muted-foreground/10 opacity-50'
+                      }`}
+                    >
+                      <div
+                        className={`w-14 h-14 rounded-full flex items-center justify-center ${
+                          isUnlocked
+                            ? 'bg-gradient-to-br from-primary to-accent shadow-md'
+                            : 'bg-muted'
+                        }`}
+                      >
+                        <Icon
+                          name={rank.icon as any}
+                          size={24}
+                          className={isUnlocked ? 'text-white' : 'text-muted-foreground'}
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h5 className={`font-semibold ${isUnlocked ? rank.color : 'text-muted-foreground'}`}>
+                            {rank.title}
+                          </h5>
+                          {isUnlocked && (
+                            <Badge variant="default" className="text-xs">
+                              Получено
+                            </Badge>
+                          )}
+                          {isNext && (
+                            <Badge variant="outline" className="text-xs">
+                              Следующее
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Выполнить {rank.tasks} задач
+                        </p>
+                      </div>
+                      {isUnlocked && (
+                        <Icon name="Check" size={24} className="text-primary" />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
+
+            {completedTasksTotal >= 1000 && (
+              <Card className="p-6 bg-gradient-to-r from-yellow-500/10 to-amber-500/10 border-yellow-500/20">
+                <div className="flex items-center gap-4">
+                  <Icon name="Crown" size={32} className="text-yellow-500" />
+                  <div>
+                    <h4 className="font-bold text-xl text-yellow-600">Поздравляем!</h4>
+                    <p className="text-muted-foreground">
+                      Вы достигли максимального звания и стали мастером продуктивности! 🎉
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            )}
           </div>
         </DialogContent>
       </Dialog>
